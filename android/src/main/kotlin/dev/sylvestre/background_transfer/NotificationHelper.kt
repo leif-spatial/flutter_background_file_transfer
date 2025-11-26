@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import java.util.regex.Pattern
 
 class NotificationHelper(private val context: Context) {
     companion object {
@@ -34,6 +35,26 @@ class NotificationHelper(private val context: Context) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    // Sanitize error messages to prevent leaking server IP/port details
+    private fun sanitizedErrorMessage(message: String): String {
+        var sanitized = message
+
+        // Replace full URLs (e.g., https://1.2.3.4:8080) with [server]
+        sanitized = sanitized.replace(
+            Regex("https?://[^\\s/]+"),
+            "[server]"
+        )
+
+        // Replace bare IPv4 addresses with optional ports
+        sanitized = sanitized.replace(
+            Regex("\\b\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d+)?\\b"),
+            "[server]"
+        )
+
+        sanitized = sanitized.trim()
+        return if (sanitized.isEmpty()) "Transfer failed" else sanitized
     }
 
     fun showStartNotification(type: String, taskId: String) {
@@ -95,7 +116,13 @@ class NotificationHelper(private val context: Context) {
                     if (type == "download") "Download Failed" else "Upload Failed"
                 }
             )
-            .setContentText(error?.message ?: if (type == "download") "Your download has finished" else "Your upload has finished")
+            .setContentText(
+                if (error == null) {
+                    if (type == "download") "Your download has finished" else "Your upload has finished"
+                } else {
+                    sanitizedErrorMessage(error.message ?: "Unknown error")
+                }
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setOngoing(false)

@@ -1,3 +1,9 @@
+## 1.2.1
+
+* Fixed security issue: sanitized error messages in notifications to prevent leaking server IP/port details
+* Improved error messaging for unreachable servers
+* Enhanced privacy protection for failed transfer notifications
+
 ## 1.2.0
 
 * Added comprehensive queue management system

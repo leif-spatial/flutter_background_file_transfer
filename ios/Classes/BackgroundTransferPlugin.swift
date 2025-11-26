@@ -663,23 +663,54 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
             }
         }
     }
-    
+
+    // Sanitize error messages shown to users so we don't leak host/IP:port details
+    private func sanitizedErrorMessage(_ error: Error) -> String {
+        // Map common network/URL errors to friendly text
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .cannotFindHost, .cannotConnectToHost, .notConnectedToInternet, .networkConnectionLost:
+                return "Server unreachable"
+            default:
+                break
+            }
+        }
+
+        var message = error.localizedDescription
+
+        // Remove full URLs (e.g. https://1.2.3.4:8080) to avoid leaking host/port
+        if let urlRegex = try? NSRegularExpression(pattern: "https?://[^\\s/]+", options: .caseInsensitive) {
+            let range = NSRange(location: 0, length: message.utf16.count)
+            message = urlRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "[server]")
+        }
+
+        // Remove bare IPv4 addresses with optional ports
+        if let ipRegex = try? NSRegularExpression(pattern: "\\b\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d+)?\\b", options: []) {
+            let range = NSRange(location: 0, length: message.utf16.count)
+            message = ipRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "[server]")
+        }
+
+        message = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        if message.isEmpty { return "Transfer failed" }
+        return message
+    }
+
     private func showTransferCompleteNotification(type: String, taskId: String, error: Error? = nil) {
         let content = UNMutableNotificationContent()
-        
+
         if let error = error {
             content.title = type == "download" ? "Download Failed" : "Upload Failed"
-            content.body = error.localizedDescription
+            content.body = sanitizedErrorMessage(error)
         } else {
             content.title = type == "download" ? "Download Complete" : "Upload Complete"
             content.body = type == "download" ? "Your download has finished" : "Your upload has finished"
         }
         content.sound = .default
-        
+
         let request = UNNotificationRequest(identifier: "\(type)_complete_\(taskId)", 
                                           content: content, 
                                           trigger: nil)
-        
+
         notificationCenter.add(request) { error in
             if let error = error {
                 os_log("Error showing complete notification: %{public}@", log: logger, type: .error, error.localizedDescription)
