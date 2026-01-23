@@ -1,3 +1,8 @@
+## 1.2.2
+
+* Enhanced security: updated error message sanitization to mask all domain names and URLs in notifications
+* Fixed leaking partial hostname information in notifications
+
 ## 1.2.1
 
 * Fixed security issue: sanitized error messages in notifications to prevent leaking server IP/port details

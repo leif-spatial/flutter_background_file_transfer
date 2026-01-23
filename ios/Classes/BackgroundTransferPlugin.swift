@@ -670,7 +670,7 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
         if let urlError = error as? URLError {
             switch urlError.code {
             case .cannotFindHost, .cannotConnectToHost, .notConnectedToInternet, .networkConnectionLost:
-                return "Server unreachable"
+                return "Connection failed: Unable to connect to server"
             default:
                 break
             }
@@ -678,16 +678,22 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
 
         var message = error.localizedDescription
 
-        // Remove full URLs (e.g. https://1.2.3.4:8080) to avoid leaking host/port
+        // Remove full URLs (e.g. https://1.2.3.4:8080)
         if let urlRegex = try? NSRegularExpression(pattern: "https?://[^\\s/]+", options: .caseInsensitive) {
             let range = NSRange(location: 0, length: message.utf16.count)
-            message = urlRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "[server]")
+            message = urlRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "")
         }
 
         // Remove bare IPv4 addresses with optional ports
         if let ipRegex = try? NSRegularExpression(pattern: "\\b\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d+)?\\b", options: []) {
             let range = NSRange(location: 0, length: message.utf16.count)
-            message = ipRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "[server]")
+            message = ipRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "")
+        }
+
+        // Remove generic domain names (e.g. example.com, api.service.co.uk)
+        if let domainRegex = try? NSRegularExpression(pattern: "(?i)\\b((?:[a-z0-9-]+\\.)+[a-z]{2,})\\b", options: []) {
+            let range = NSRange(location: 0, length: message.utf16.count)
+            message = domainRegex.stringByReplacingMatches(in: message, options: [], range: range, withTemplate: "")
         }
 
         message = message.trimmingCharacters(in: .whitespacesAndNewlines)

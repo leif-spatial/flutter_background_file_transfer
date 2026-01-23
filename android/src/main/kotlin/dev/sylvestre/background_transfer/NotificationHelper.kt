@@ -39,18 +39,26 @@ class NotificationHelper(private val context: Context) {
 
     // Sanitize error messages to prevent leaking server IP/port details
     private fun sanitizedErrorMessage(message: String): String {
+
+
         var sanitized = message
 
-        // Replace full URLs (e.g., https://1.2.3.4:8080) with [server]
+        // Replace full URLs (e.g., https://1.2.3.4:8080) with empty string
         sanitized = sanitized.replace(
             Regex("https?://[^\\s/]+"),
-            "[server]"
+            ""
         )
 
         // Replace bare IPv4 addresses with optional ports
         sanitized = sanitized.replace(
             Regex("\\b\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d+)?\\b"),
-            "[server]"
+            ""
+        )
+
+        // Replace any potential domain names (generic match for domain.tld or sub.domain.tld)
+        sanitized = sanitized.replace(
+            Regex("(?i)\\b((?:[a-z0-9-]+\\.)+[a-z]{2,})\\b"),
+            ""
         )
 
         sanitized = sanitized.trim()
