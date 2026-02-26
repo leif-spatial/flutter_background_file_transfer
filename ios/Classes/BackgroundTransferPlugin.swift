@@ -343,7 +343,7 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
                 
                 // Create and configure upload request
                 var request = URLRequest(url: url)
-                request.httpMethod = "POST"
+                request.httpMethod = "PUT"
                 request.timeoutInterval = 3600 // 1 hour timeout
                 request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
                 
