@@ -345,7 +345,7 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
                 var request = URLRequest(url: url)
                 request.httpMethod = "PUT"
                 request.timeoutInterval = 3600 // 1 hour timeout
-                request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+                //request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
                 
                 // Add custom headers
                 headers.forEach { key, value in
@@ -373,7 +373,7 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
                 self.uploadTasks.append(uploadTask)
                 uploadTask.resume()
                 
-                self.showTransferStartNotification(type: "upload", taskId: taskId)
+                //self.showTransferStartNotification(type: "upload", taskId: taskId)
                 
                 // Schedule cleanup of temporary file
                 DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 300) {
@@ -381,7 +381,7 @@ public class BackgroundTransferPlugin: NSObject, FlutterPlugin, URLSessionTaskDe
                 }
             } catch {
                 os_log("Error preparing upload: %{public}@", log: logger, type: .error, error.localizedDescription)
-                self.showTransferCompleteNotification(type: "upload", taskId: taskId, error: error)
+                //self.showTransferCompleteNotification(type: "upload", taskId: taskId, error: error)
                 completion()
             }
         }
